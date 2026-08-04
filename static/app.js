@@ -1,0 +1,233 @@
+const board = document.querySelector("#board");
+const dialog = document.querySelector("#taskDialog");
+const form = document.querySelector("#taskForm");
+const formError = document.querySelector("#formError");
+const deleteButton = document.querySelector("#deleteTaskButton");
+const pageError = document.querySelector("#pageError");
+
+const fields = {
+  id: document.querySelector("#taskId"),
+  title: document.querySelector("#title"),
+  description: document.querySelector("#description"),
+  status: document.querySelector("#status"),
+  priority: document.querySelector("#priority"),
+  assignee: document.querySelector("#assignee"),
+  dueDate: document.querySelector("#dueDate"),
+  tags: document.querySelector("#tags"),
+};
+
+const labels = {
+  todo: "To do",
+  in_progress: "In progress",
+  done: "Done",
+};
+
+let currentTasks = [];
+
+function showPageError(message) {
+  pageError.textContent = message;
+  pageError.classList.remove("hidden");
+}
+
+function clearPageError() {
+  pageError.textContent = "";
+  pageError.classList.add("hidden");
+}
+
+async function apiRequest(url, options = {}) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    throw new Error("Unable to connect to the server. Check your network and try again.");
+  }
+
+  if (!response.ok) {
+    let message = `Request failed with status ${response.status}.`;
+    try {
+      const body = await response.json();
+      if (typeof body.detail === "string") {
+        message = body.detail;
+      } else if (Array.isArray(body.detail)) {
+        message = body.detail.map(item => item.msg).join(" ");
+      }
+    } catch (error) {
+      // Keep the fallback message.
+    }
+    throw new Error(message);
+  }
+
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+async function fetchTasks() {
+  clearPageError();
+  board.setAttribute("aria-busy", "true");
+  const params = new URLSearchParams();
+  const overdue = document.querySelector("#overdueFilter").value;
+  const tag = document.querySelector("#tagFilter").value.trim();
+
+  if (overdue) params.set("overdue", overdue);
+  if (tag) params.set("tag", tag);
+
+  try {
+    currentTasks = await apiRequest(`/tasks?${params}`);
+    renderBoard();
+  } catch (error) {
+    board.innerHTML = "";
+    showPageError(`Tasks could not be loaded. ${error.message}`);
+  } finally {
+    board.removeAttribute("aria-busy");
+  }
+}
+
+function renderBoard() {
+  board.innerHTML = "";
+  for (const status of ["todo", "in_progress", "done"]) {
+    const tasks = currentTasks.filter(task => task.status === status);
+    const column = document.createElement("section");
+    column.className = "column";
+    column.innerHTML = `<h2>${labels[status]} <span>${tasks.length}</span></h2>`;
+
+    if (!tasks.length) {
+      column.insertAdjacentHTML("beforeend", `<p class="empty">No tasks</p>`);
+    }
+
+    for (const task of tasks) {
+      const card = document.createElement("article");
+      card.className = "card";
+      const tags = task.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join("");
+      const due = task.due_date
+        ? `<span class="badge ${task.overdue ? "overdue" : ""}">
+            ${task.overdue ? "Overdue · " : ""}${task.due_date}
+           </span>`
+        : "";
+
+      card.innerHTML = `
+        <h3>${escapeHtml(task.title)}</h3>
+        <p>${escapeHtml(task.description || "No description")}</p>
+        <div class="meta">
+          <span class="badge">${task.priority}</span>
+          ${task.assignee ? `<span class="badge">${escapeHtml(task.assignee)}</span>` : ""}
+          ${due}
+          ${tags}
+        </div>`;
+      card.addEventListener("click", () => openEditDialog(task));
+      column.appendChild(card);
+    }
+
+    board.appendChild(column);
+  }
+}
+
+function openNewDialog() {
+  document.querySelector("#dialogTitle").textContent = "New task";
+  form.reset();
+  fields.id.value = "";
+  fields.status.value = "todo";
+  fields.priority.value = "medium";
+  formError.textContent = "";
+  deleteButton.classList.add("hidden");
+  dialog.showModal();
+}
+
+function openEditDialog(task) {
+  document.querySelector("#dialogTitle").textContent = "Edit task";
+  fields.id.value = task.id;
+  fields.title.value = task.title;
+  fields.description.value = task.description;
+  fields.status.value = task.status;
+  fields.priority.value = task.priority;
+  fields.assignee.value = task.assignee;
+  fields.dueDate.value = task.due_date || "";
+  fields.tags.value = task.tags.join(", ");
+  formError.textContent = "";
+  deleteButton.classList.remove("hidden");
+  dialog.showModal();
+}
+
+function closeDialog() {
+  dialog.close();
+}
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+  formError.textContent = "";
+
+  const payload = {
+    title: fields.title.value,
+    description: fields.description.value,
+    status: fields.status.value,
+    priority: fields.priority.value,
+    assignee: fields.assignee.value,
+    due_date: fields.dueDate.value || null,
+    tags: fields.tags.value.split(",").map(tag => tag.trim()).filter(Boolean),
+  };
+
+  const id = fields.id.value;
+  const submitButton = form.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+
+  try {
+    await apiRequest(id ? `/tasks/${id}` : "/tasks", {
+      method: id ? "PATCH" : "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload),
+    });
+    closeDialog();
+    await fetchTasks();
+  } catch (error) {
+    formError.textContent = error.message || "Unable to save task.";
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+deleteButton.addEventListener("click", async () => {
+  const id = fields.id.value;
+  if (!id || !confirm("Delete this task?")) return;
+
+  formError.textContent = "";
+  deleteButton.disabled = true;
+  try {
+    await apiRequest(`/tasks/${id}`, {method: "DELETE"});
+    closeDialog();
+    await fetchTasks();
+  } catch (error) {
+    formError.textContent = `Task could not be deleted. ${error.message}`;
+  } finally {
+    deleteButton.disabled = false;
+  }
+});
+
+document.querySelector("#newTaskButton").addEventListener("click", openNewDialog);
+document.querySelector("#closeDialogButton").addEventListener("click", closeDialog);
+document.querySelector("#cancelButton").addEventListener("click", closeDialog);
+document.querySelector("#overdueFilter").addEventListener("change", fetchTasks);
+document.querySelector("#tagFilter").addEventListener("input", debounce(fetchTasks, 250));
+document.querySelector("#clearFiltersButton").addEventListener("click", () => {
+  document.querySelector("#overdueFilter").value = "";
+  document.querySelector("#tagFilter").value = "";
+  fetchTasks();
+});
+
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  })[char]);
+}
+
+fetchTasks();
