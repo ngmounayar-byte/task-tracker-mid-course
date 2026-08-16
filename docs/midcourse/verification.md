@@ -1,111 +1,109 @@
 # Verification
 
-## Baseline check
-
-The original Modules 1–3 repository was not available in this submission. This limitation is stated transparently; the current repository cannot independently demonstrate preservation of that earlier baseline.
-
-Baseline before feature work:
-- FastAPI application started successfully.
-- `GET /tasks` returned the initial task collection.
-- Frontend loaded the three Kanban columns.
-- Initial test suite status: no tests existed.
-
 ## Backend test results
 
-Command:
+Command used after restoring the correct implementation:
 
 ```bash
 pytest -q
 ```
 
-Expected result:
+Actual pytest output:
 
 ```text
-8 passed
+.................                                                        [100%]
+17 passed in 0.27s
 ```
 
-Tests cover:
-- Valid due date and tags
-- Invalid date format
-- Overdue filtering
-- Completed task excluded from overdue
-- Blank tag rejection
-- Case-insensitive tag filtering
-- Tag preservation after unrelated update
-- Due-date update
-
-## Manual browser checks
-
-1. Opened `http://127.0.0.1:8000`.
-2. Created a task with a due date and two tags.
-3. Confirmed the due date and tag chips appeared on the card.
-4. Edited the task and changed only its priority.
-5. Confirmed tags and due date were preserved.
-6. Filtered by tag using different letter casing.
-7. Created a task with a past date and confirmed the overdue badge appeared.
-8. Marked the overdue task as done and confirmed the overdue badge disappeared.
-9. Applied the overdue filter and confirmed empty Kanban columns remained visible.
-
-## Behavior contract used for focused refactor verification
-
-- `POST /tasks` creates a task.
-- `PATCH /tasks/{id}` updates only supplied fields.
-- `DELETE /tasks/{id}` removes a task.
-- `GET /tasks` returns tasks sorted by ID.
-- Missing tasks return 404.
-
-## Behavior contract after refactor
-
-All baseline behavior remained unchanged, with these additions:
-- Optional `due_date`
-- Computed `overdue`
-- Optional `overdue` query filter
-- Validated `tags`
-- Optional case-insensitive `tag` query filter
+The automated tests cover due dates, overdue filtering, tag validation and filtering, partial-update preservation, explicit-null rejection, and omitted-field behavior.
 
 ## Break Test evidence
 
-### Break Test 1: completed tasks and overdue logic
+The purpose of this break test was to prove that the automated test suite detects a real regression and that the test passes again after the implementation is fixed.
 
-Important test:
+### Test selected
 
 ```text
 test_done_task_is_not_overdue
 ```
 
-Break introduced:
-- Temporarily removed `task.status != Status.done` from the overdue property.
+### Correct behavior
 
-Observed result:
-- The test failed because the completed past-due task appeared in the overdue result.
+A task whose due date is in the past must **not** be reported as overdue when its status is `done`.
 
-Fix:
-- Restored the status exclusion.
+The correct implementation in `Task.overdue` is:
 
-### Break Test 2: preserving tags on partial update
-
-Important test:
-
-```text
-test_unrelated_update_preserves_tags
+```python
+return self.due_date is not None and self.due_date < date.today() and self.status != Status.done
 ```
 
-Break introduced:
-- Temporarily built PATCH data from the full update model instead of using `exclude_unset=True`.
+### Step 1 — intentionally introduce a regression
 
-Observed result:
-- The test failed because omitted tags were replaced.
+For the break test only, I temporarily changed the implementation to:
 
-Fix:
-- Restored `payload.model_dump(exclude_unset=True)`.
+```python
+return self.due_date is not None and self.due_date < date.today()
+```
 
+This intentionally removes the `self.status != Status.done` protection.
+
+Command executed:
+
+```bash
+pytest -q tests/test_tasks.py::test_done_task_is_not_overdue
+```
+
+Actual failing pytest output:
+
+```text
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________ test_done_task_is_not_overdue _________________________
+
+    def test_done_task_is_not_overdue(client):
+        make_task(client,title='Completed late task',due_date=(date.today()-timedelta(days=1)).isoformat(),status='done')
+>       response=client.get('/tasks',params={'overdue':'true'}); assert response.status_code==200; assert response.json()==[]
+E       AssertionError: assert [{'assignee':...'id': 1, ...}] == []
+E       Left contains one more item: {'assignee': 'Nathalie', 'description': 'A test task', 'due_date': '2026-08-15', 'id': 1, ...}
+
+FAILED tests/test_tasks.py::test_done_task_is_not_overdue - AssertionError
+1 failed in 0.25s
+```
+
+This failure proves that the test catches the regression: a completed task incorrectly appears in the overdue results.
+
+### Step 2 — restore the fix
+
+I restored the original correct condition:
+
+```python
+return self.due_date is not None and self.due_date < date.today() and self.status != Status.done
+```
+
+Then I executed the complete test suite again:
+
+```bash
+pytest -q
+```
+
+Actual passing pytest output:
+
+```text
+.................                                                        [100%]
+17 passed in 0.27s
+```
+
+Therefore, the break-test sequence is demonstrated with both real failing pytest output and real passing pytest output after the fix.
 
 ## Reviewer corrections
 
-- Explicit `null` values for `title`, `status`, `priority`, and `tags` now return HTTP 422.
-- Frontend task loading, deletion, save, and network failures now display visible error messages.
-- Feature behavior and behavior-preserving refactoring are documented separately.
+- Explicit `null` values for `title`, `status`, `priority`, and `tags` return HTTP 422.
+- Partial PATCH updates preserve omitted fields because `payload.model_dump(exclude_unset=True)` is used.
+- Completed past-due tasks are excluded from overdue results.
+- Automated tests verify the corrected behavior.
 
-## Baseline limitation
+## Repository cleanup required before resubmission
 
-Because the original Modules 1–3 repository and its Git history were not available, this submission does not claim that the earlier baseline has been proven. A complete resubmission would require importing the genuine earlier project and its existing tests before the mid-course changes.
+The valid pytest suite is `tests/test_tasks.py`. A separate root-level `test_tasks.py` currently contains CSS rather than Python and should be removed so that pytest does not try to collect an invalid test module.
+
+The existing root `TEST-RESULTS.txt` should also be replaced with the actual passing pytest output supplied with this resubmission.
