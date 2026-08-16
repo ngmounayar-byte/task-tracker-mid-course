@@ -1,0 +1,41 @@
+BREAK TEST — INTENTIONAL REGRESSION
+Command:
+pytest -q tests/test_tasks.py::test_done_task_is_not_overdue
+
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________ test_done_task_is_not_overdue _________________________
+
+    def test_done_task_is_not_overdue(client):
+        make_task(client,title='Completed late task',due_date=(date.today()-timedelta(days=1)).isoformat(),status='done')
+>       response=client.get('/tasks',params={'overdue':'true'}); assert response.status_code==200; assert response.json()==[]
+                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert [{'assignee':...'id': 1, ...}] == []
+E
+E         Left contains one more item: {'assignee': 'Nathalie', 'description': 'A test task', 'due_date': '2026-08-15', 'id': 1, ...}
+E
+E         Full diff:
+E         - []
+E         + [
+E         +     {
+E         +         'assignee': 'Nathalie',
+E         +         'description': 'A test task',
+E         +         'due_date': '2026-08-15',
+E         +         'id': 1,
+E         +         'overdue': True,
+E         +         'priority': 'medium',
+E         +         'status': 'done',
+E         +         'tags': [],
+E         +         'title': 'Completed late task',
+E         +     },
+E         + ]
+
+FAILED tests/test_tasks.py::test_done_task_is_not_overdue - AssertionError
+1 failed in 0.25s
+
+AFTER RESTORING THE CORRECT IMPLEMENTATION
+Command:
+pytest -q
+
+.................                                                        [100%]
+17 passed in 0.27s
