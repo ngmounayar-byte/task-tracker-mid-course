@@ -1,90 +1,77 @@
-# Task Tracker — Mid-Course Project
+# Task Tracker
 
-A small full-stack Task Tracker built with FastAPI and vanilla JavaScript.
+A Task Tracker application with a Python/FastAPI backend and a vanilla HTML/CSS/JavaScript
+Kanban-board frontend (no framework, no build step). Tasks have a title, description, status
+(`ToDo`/`InProgress`/`Done`), priority (`Low`/`Medium`/`High`), assignee, due date, and tags.
 
-## Selected features
+The backend exposes a REST API (`/tasks`) with full CRUD, status-transition business rules, and
+filtering. The frontend renders tasks as a drag-and-drop Kanban board with a create/edit modal.
 
-1. **Due dates and overdue filtering**
-   - Optional due date on create and update
-   - Date validation
-   - Overdue badge on cards
-   - Overdue-only and not-overdue filters
+## Features
 
-2. **Tags and tag filtering**
-   - Up to 8 trimmed, non-empty tags
-   - Case-insensitive duplicate removal
-   - Tag chips on cards
-   - Case-insensitive tag filter
+- **Kanban board:** three columns (To Do / In Progress / Done), drag a card between columns to
+  update its status.
+- **Create/edit modal:** click "+ New Task" or a card's "Edit" button to open the form.
+- **Due dates + overdue filter:** set a due date in the modal; a task past its due date (and not
+  `Done`) is highlighted on its card with a red border. Check "Show overdue only" in the header to
+  filter the board to just those tasks.
+- **Tags + tag filter:** enter comma-separated tags in the modal (e.g. `urgent, backend`); they
+  render as chips on the card. Type into the "Filter by tag" field in the header to filter the
+  board to tasks matching that tag.
 
-## Branch
+## Setup
 
-The submission branch is:
+1. Create and activate a virtual environment:
+   ```
+   python -m venv venv
+   venv\Scripts\activate        # Windows
+   source venv/bin/activate     # macOS/Linux
+   ```
 
-```text
-mid-course-project
-```
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Copy the example environment file:
+   ```
+   copy .env.example .env       # Windows
+   cp .env.example .env         # macOS/Linux
+   ```
 
 ## Run the backend
 
-Create and activate a virtual environment, then install dependencies:
-
-```bash
-python -m venv .venv
+```
+uvicorn app.main:app --reload
 ```
 
-Windows:
-
-```bash
-.venv\Scripts\activate
+The API starts at `http://127.0.0.1:8000`. Check it's up:
+```
+curl http://127.0.0.1:8000/health
+```
+Expected response:
+```json
+{"status": "ok", "timestamp": "2026-07-14T12:00:00+00:00"}
 ```
 
-macOS/Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-Install and run:
-
-```bash
-pip install -r requirements.txt
-uvicorn app:app --reload
-```
+Interactive API docs (Swagger UI): `http://127.0.0.1:8000/docs`
 
 ## Open the frontend
 
-Open this address in a browser:
-
-```text
-http://127.0.0.1:8000
+With the backend running, open `frontend/index.html` directly in a browser (`file://...`), or
+serve it locally:
 ```
+cd frontend
+python -m http.server 5500
+```
+then open `http://localhost:5500/`. Both origins are already allowed by the backend's CORS
+configuration.
 
 ## Run tests
 
-```bash
-pytest -q
+```
+python -m pytest tests/test_tasks.py -v
 ```
 
-## Project structure
-
-```text
-app.py
-static/
-  index.html
-  app.js
-  styles.css
-tests/
-  test_tasks.py
-docs/
-  midcourse/
-    user-stories.md
-    mini-adr.md
-    prompt-log.md
-    verification.md
-    reflection.md
-```
-
-## Notes
-
-- Data is stored in memory for simplicity and resets when the server restarts.
-- No credentials, secrets, private data, or unrelated generated files are included.
+Use `python -m pytest` (not the bare `pytest` command) — this ensures the project root is on
+`sys.path` so `app` can be imported; the bare `pytest` script does not add it automatically.

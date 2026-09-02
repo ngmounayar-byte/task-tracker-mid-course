@@ -1,11 +1,32 @@
-# Reflection
+# Reflection — Mid-Course Project
 
-I used an AI coding assistant to help plan, implement, test, review, and document two features for this Task Tracker: due dates with overdue filtering, and tags with tag filtering. I used AI most effectively when the request was constrained. For example, asking for an optional ISO date, a precise overdue rule, a PATCH update, and focused pytest coverage produced a useful starting point. Broad prompts such as “add due dates” were much less helpful because they left important behavior undefined.
+I used Claude Code for the entire workflow this module: drafting user stories, writing the
+mini-ADR, generating each backend/frontend change from scoped prompts, writing pytest tests,
+running Break Tests, managing git (branch, commits), and producing these docs. Everything went
+through one tool rather than switching between a chat assistant and a separate coding agent,
+which made it easy to keep context (decisions made earlier stayed visible when drafting later
+prompts) but also meant I had to be the one enforcing scope discipline — nothing stopped the AI
+from happily implementing more than I'd asked if I phrased a prompt loosely.
 
-One moment where AI helped was identifying edge cases that were easy to overlook. It suggested testing invalid date input, overdue filtering, and update behavior. This helped turn a visual feature into a properly verified backend change. It also helped structure the Pydantic validators for trimmed, non-empty tags.
+**Where it helped most:** catching a real correctness gap before it became a bug. When drafting
+the `due_date` field, I assumed Pydantic's native date type would reject any malformed input with
+422. Before accepting that as fact, I asked for it to be verified directly rather than taken on
+faith — and it turned out Pydantic silently accepts an integer as a Unix timestamp instead of
+rejecting it. That's the kind of framework-specific edge case I wouldn't have thought to test
+manually, and catching it before writing the acceptance criterion (not after shipping it) meant
+the fix was one small validator, not a debugging session later.
 
-AI slowed me down when it proposed designs that were too ambitious for the assignment. One suggestion was to introduce normalized tag tables and persistence. That design could be appropriate in a larger application, but it would have added migrations, repositories, and database setup that were not necessary for this scoped project. I rejected that option and kept tags as a validated list on each in-memory task.
+**Where it slowed things down:** environment friction, not logic. A recurring issue this session
+was that servers started in the AI's own background tooling weren't reachable from its embedded
+browser preview — a sandboxing quirk, not an application bug — which meant every frontend
+verification needed a workaround (executing functions directly against the live page) instead of
+a normal click-through test. It never blocked progress, but it added real back-and-forth
+explaining why a "connection refused" wasn't a code problem.
 
-My review changed the result in several places. The most important correction was the overdue rule. A simple “due date before today” calculation incorrectly marks completed tasks as overdue. I changed the rule so tasks with status `done` are excluded. I also added HTML escaping before rendering user-entered values, which was not included in the first frontend draft.
-
-The project reinforced that AI output should be treated as a proposal rather than an answer. Small prompts, explicit constraints, focused tests, manual browser checks, and Break Tests made the final result easier to understand and defend.
+**Where my review changed the result:** reviewing `user-stories.md` against the original feature
+brief, after storage-layer work had already begun, surfaced that "filter by tag" and "update tags"
+were both listed in the brief but had never become actual acceptance criteria. Rather than let the
+AI quietly implement (or quietly skip) that gap, I asked whether it wasn't better to write the
+missing stories first — which produced Stories 7 and 8, written and committed *before* the
+corresponding code, so the backend behavior matches something documented rather than something
+inferred after the fact.
