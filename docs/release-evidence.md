@@ -5,7 +5,7 @@
 - Date checked: 2026-09-02.
 - Local app run command: `python -m uvicorn app.main:app --host 127.0.0.1 --port 8765`.
 - `/health` result: HTTP `200 OK` with JSON `{"status":"ok", ...}` on 2026-09-02.
-- Frontend check: the repository serves `frontend/index.html` from `/`; the existing mid-course verification records a manual Kanban/create-edit browser check. A fresh browser check should be repeated by the submitter after cloning/pushing the final branch.
+- Frontend check: **PASS**. On 2026-09-03, the application was started locally on port 8000 and opened at `http://localhost:8000/`. The Kanban board loaded successfully with tasks visible in the To Do, In Progress, and Done columns. The create flow was verified by creating `Final frontend test`, and the edit flow was verified by changing its title to `Final frontend test edited`.
 - Test command: `python -m pytest tests/ -q`.
 - Test result: `45 passed, 4 warnings in 0.26s`.
 
