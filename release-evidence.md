@@ -30,7 +30,10 @@
 - Expected result from application contract: HTTP `200` and a JSON body with `status: "ok"` and a timestamp.
 - Non-root check: the Dockerfile creates `appuser` and switches to `USER appuser` before runtime.
 - No-baked-secrets check: `.dockerignore` excludes `.env` and `.env.*`; only the application and frontend are copied after dependency installation.
-- Runtime verification: **TO COMPLETE ON A MACHINE WITH DOCKER.** Docker is not available in the review environment used to assemble this package, so no Docker build/run result is claimed here. Run the three commands above and replace this note with the real result before submission.
+- Local Docker verification: **NOT COMPLETED on this machine**.
+- Reason: Docker Desktop was installed, but it could not start because virtualization support was not available on the current computer.
+- Therefore, the Docker image build/run and container `/health` HTTP 200 check could not be verified locally.
+- No successful Docker runtime result is claimed.
 
 ## Documentation claim-vs-reality log
 
