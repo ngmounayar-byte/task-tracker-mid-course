@@ -4,7 +4,7 @@
 - Branch required for final submission: `final-project`.
 - Date checked: 2026-09-02.
 - Local app run command: `python -m uvicorn app.main:app --host 127.0.0.1 --port 8765`.
-- `/health` result: HTTP `200 OK` with JSON `{"status":"ok", ...}` on 2026-09-02.
+- `/health` result: HTTP `200 OK` with JSON `{"status":"ok", ...}` on 2026-09-03.
 - Frontend check: **PASS**. On 2026-09-03, the application was started locally on port 8000 and opened at `http://localhost:8000/`. The Kanban board loaded successfully with tasks visible in the To Do, In Progress, and Done columns. The create flow was verified by creating `Final frontend test`, and the edit flow was verified by changing its title to `Final frontend test edited`.
 - Test command: `python -m pytest tests/ -q`.
 - Test result: `45 passed, 4 warnings in 0.26s`.
@@ -25,7 +25,7 @@
 - Dockerfile: `Dockerfile`.
 - Ignore file: `.dockerignore`.
 - Build command: `docker build -t task-tracker .`.
-- Run command: `docker run --rm -p 8000:8000 task-tracker`.
+- Run command: `docker run -d --name task-tracker-final -p 8000:8000 task-tracker`.
 - Container health command: `curl -i http://127.0.0.1:8000/health`.
 - Expected result from application contract: HTTP `200` and a JSON body with `status: "ok"` and a timestamp.
 - Non-root check: the Dockerfile creates `appuser` and switches to `USER appuser` before runtime.
