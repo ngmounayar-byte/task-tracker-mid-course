@@ -241,7 +241,7 @@ python -m pip install pytest httpx
 python -m pytest tests/ -q
 ```
 
-Final packaging check on 2026-09-02: `36 passed in 0.22s`.
+Final packaging check on 2026-09-03: `45 passed, 4 warnings in 0.26s`.
 
 ### How to run with Docker
 
@@ -251,7 +251,7 @@ docker run --rm -p 8000:8000 task-tracker
 curl -i http://127.0.0.1:8000/health
 ```
 
-The Dockerfile is configured to run the application as a non-root user. Docker runtime verification could not be completed on this machine because Docker Desktop could not start without virtualization support. This limitation is documented in docs/release-evidence.md.
+The Dockerfile is configured to run the application as a non-root user. Docker runtime verification was successfully completed on 2026-09-03 using GitHub Codespaces. The image built successfully, the container started successfully, and curl -i http://localhost:8000/health returned HTTP/1.1 200 OK with "status":"ok". Full verification evidence is documented in docs/release-evidence.md.
 
 ### Evidence files
 
