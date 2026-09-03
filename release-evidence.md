@@ -16,7 +16,10 @@
 - Dependency installation: installs `requirements.txt`, then `pytest` and `httpx` required by the test suite.
 - Test command used by CI: `python -m pytest tests/ -q`.
 - Shortcut check: no `continue-on-error`, no `|| true`, pytest is not skipped, and dependency installation is explicit.
-- Latest GitHub Actions run link or note: **TO COMPLETE AFTER PUSHING `final-project` TO GITHUB.** Replace this sentence with the green Actions run URL or an honest run-status note.
+- Latest GitHub Actions status: **PASS**.
+- Branch tested: `final-project`.
+- Latest successful run: `Clean CI branch configuration`.
+- All CI checks passed successfully on 2026-09-03.
 
 ## Docker evidence
 - Dockerfile: `Dockerfile`.
