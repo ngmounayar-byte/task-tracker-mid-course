@@ -30,10 +30,10 @@
 - Expected result from application contract: HTTP `200` and a JSON body with `status: "ok"` and a timestamp.
 - Non-root check: the Dockerfile creates `appuser` and switches to `USER appuser` before runtime.
 - No-baked-secrets check: `.dockerignore` excludes `.env` and `.env.*`; only the application and frontend are copied after dependency installation.
-- Local Docker verification: **NOT COMPLETED on this machine**.
-- Reason: Docker Desktop was installed, but it could not start because virtualization support was not available on the current computer.
-- Therefore, the Docker image build/run and container `/health` HTTP 200 check could not be verified locally.
-- No successful Docker runtime result is claimed.
+- Docker runtime verification: **PASS** on 2026-09-03 using GitHub Codespaces.
+- Docker image build: **PASS** using `docker build -t task-tracker .`.
+- Container run: **PASS** using `docker run -d --name task-tracker-final -p 8000:8000 task-tracker`.
+- Container `/health` verification: **PASS**. `curl -i http://localhost:8000/health` returned `HTTP/1.1 200 OK` with JSON containing `"status":"ok"`.
 
 ## Documentation claim-vs-reality log
 
@@ -43,4 +43,4 @@
 | `GET /health` returns HTTP 200. | Started Uvicorn locally and called `/health` with curl on 2026-09-02. | PASS: HTTP 200 with `status: ok`. | Kept the health command in README and Docker evidence. |
 | Tests do not use the real seed-data file. | `tests/conftest.py` plus existing `docs/midcourse/verification.md`. | PASS: tests use `TASKS_FILE` pointing to `tests/data/test_tasks.json`. | AGENTS.md preserves this as a project guardrail. |
 | CI runs pytest without failure-hiding shortcuts. | `.github/workflows/ci.yml` manual inspection. | PASS: GitHub Actions ran successfully on `final-project`; 45 tests passed. | Added explicit dependency install and pytest step. |
-| Docker image runs `/health` successfully. | Dockerfile/config inspection only. | NOT YET RUNTIME-VERIFIED. | Left an explicit completion note instead of inventing a pass. |
+| Docker image runs `/health` successfully. | Docker image built and container run in GitHub Codespaces on 2026-09-03; /health checked with curl. | PASS: HTTP/1.1 200 OK with status: ok. | Recorded successful Docker runtime verification from GitHub Codespaces. |
