@@ -1,0 +1,121 @@
+[
+  {
+    "id": "7907a4290ae44829978f0b1d855f4e89",
+    "title": "Set up project repository",
+    "description": "Initialize Git repo, add README and .gitignore",
+    "status": "Done",
+    "priority": "High",
+    "assignee": "Alice",
+    "created_at": "2026-07-24T07:52:41.090373Z",
+    "updated_at": "2026-07-24T07:52:41.090373Z"
+  },
+  {
+    "id": "161d15ee28c245b28896a82636bb0e76",
+    "title": "Design database schema",
+    "description": "Sketch the entity relationships and field types",
+    "status": "InProgress",
+    "priority": "High",
+    "assignee": "Bob",
+    "due_date": null,
+    "tags": [],
+    "created_at": "2026-07-24T07:52:43.607863Z",
+    "updated_at": "2026-07-28T12:23:36.768420Z"
+  },
+  {
+    "id": "24b8da2bdb5c4099991f2c1f21235e2a",
+    "title": "Implement POST /tasks endpoint",
+    "description": "Wire up create-task route with validation",
+    "status": "InProgress",
+    "priority": "High",
+    "assignee": "Alice",
+    "created_at": "2026-07-24T07:52:46.136883Z",
+    "updated_at": "2026-07-24T07:52:46.136883Z"
+  },
+  {
+    "id": "ee354236c78348bcb447d0a240eca1d4",
+    "title": "Write unit tests for task CRUD",
+    "description": "Cover create, read, update, delete flows",
+    "status": "InProgress",
+    "priority": "Medium",
+    "assignee": "Charlie",
+    "created_at": "2026-07-24T07:52:48.438133Z",
+    "updated_at": "2026-07-24T07:52:48.438133Z"
+  },
+  {
+    "id": "eeaf4585cc5c447c8b4825a698678c1f",
+    "title": "Build Kanban frontend",
+    "description": "Drag-and-drop board with modal editing",
+    "status": "InProgress",
+    "priority": "High",
+    "assignee": "Alice",
+    "due_date": null,
+    "tags": [],
+    "created_at": "2026-07-24T07:52:50.463246Z",
+    "updated_at": "2026-07-28T12:22:50.808818Z"
+  },
+  {
+    "id": "ee60cbfd490e4d2ebe9a59b5f4b24363",
+    "title": "Add filtering by priority",
+    "description": "Allow GET /tasks?priority=High",
+    "status": "ToDo",
+    "priority": "Medium",
+    "assignee": "Bob",
+    "created_at": "2026-07-24T07:52:52.544302Z",
+    "updated_at": "2026-07-24T07:52:52.544302Z"
+  },
+  {
+    "id": "cf04a2e3afe2451d93699aa9aee0c9f9",
+    "title": "Deploy to staging environment",
+    "description": "Push the app and run smoke tests",
+    "status": "ToDo",
+    "priority": "Low",
+    "assignee": null,
+    "created_at": "2026-07-24T07:52:54.350733Z",
+    "updated_at": "2026-07-24T07:52:54.350733Z"
+  },
+  {
+    "id": "23ab47c0e48a44479c972d4ef0aa3b0f",
+    "title": "Ship the release notes 1",
+    "description": "",
+    "status": "Done",
+    "priority": "High",
+    "assignee": "Alice",
+    "due_date": "2026-07-20",
+    "tags": [
+      "docs",
+      "urgent",
+      "test"
+    ],
+    "created_at": "2026-07-28T11:59:29.440969Z",
+    "updated_at": "2026-07-28T12:23:40.738375Z"
+  },
+  {
+    "id": "5eaab58616c84a938f3765215f6be59a",
+    "title": "Plan next sprint",
+    "description": "",
+    "status": "InProgress",
+    "priority": "Medium",
+    "assignee": null,
+    "due_date": "2026-08-15",
+    "tags": [
+      "planning"
+    ],
+    "created_at": "2026-07-28T11:59:29.487775Z",
+    "updated_at": "2026-07-28T11:59:29.487775Z"
+  },
+  {
+    "id": "23b0e3050c50453489c26432c90cf4bc",
+    "title": "this is a new task",
+    "description": "",
+    "status": "ToDo",
+    "priority": "High",
+    "assignee": "Nathalie",
+    "due_date": "2026-07-29",
+    "tags": [
+      "tag1",
+      "tag2"
+    ],
+    "created_at": "2026-07-28T12:28:58.725639Z",
+    "updated_at": "2026-07-28T12:29:12.557790Z"
+  }
+]

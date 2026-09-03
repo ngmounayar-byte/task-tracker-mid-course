@@ -1,12 +1,616 @@
-[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                                                 [100%][0m
-[32m[32m[1m8 passed[0m[32m in 3.12s[0m[0m
-Spreadsheet runtime warmup failed during python startup
-Traceback (most recent call last):
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/patches/warm_spreadsheet_runtime_on_startup.py", line 26, in warm_spreadsheet_runtime_on_startup
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/spreadsheet_warmup.py", line 785, in warm_spreadsheet_runtime
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/spreadsheet_warmup.py", line 720, in _warm_feature_flows
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/spreadsheet_warmup.py", line 704, in _warm_collaboration_flows
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/generated/interface/models.py", line 30820, in hydrate_crdt_from_proto
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/rpc/remote.py", line 749, in __call__
-  File "/tmp/tmp.yTcnQsZYiA/artifact_tool_v2-2.8.4/artifact_tool/rpc/client.py", line 150, in call
-artifact_tool.rpc.client.RemoteError: hydrateCrdtFromProto requires an empty collaborative document.
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Task Tracker — Kanban</title>
+  <style>
+    :root{--bg:#f4f6f8;--card:#fff;--muted:#6b7280;--accent:#2563eb}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;line-height:1.4;margin:0;background:var(--bg);color:#111}
+    .site-header{padding:24px 32px;border-bottom:1px solid rgba(0,0,0,0.06);background:#fff}
+    .site-header h1{margin:0;font-size:20px}
+    .site-header p{margin:6px 0 0;color:var(--muted)}
+
+    main{padding:20px 32px}
+    .board{display:flex;gap:16px;align-items:flex-start}
+    .column{flex:1;min-width:240px;background:transparent}
+    .column-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .column-header h2{margin:0;font-size:14px}
+    .column-body{background:transparent;padding:6px;border-radius:6px;min-height:120px}
+    .board-state{margin-bottom:16px;padding:14px 16px;border-radius:10px;background:#fff;border:1px solid rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+    .board-state.hidden{display:none}
+    .board-state .state-message{color:#334155;font-size:14px}
+    .board-state .state-action button{background:transparent;border:1px solid var(--accent);color:var(--accent);padding:8px 12px;border-radius:8px;cursor:pointer}
+    .board-state .state-action button:hover{background:rgba(37,99,235,0.08)}
+    .count{font-size:12px;color:var(--muted);font-weight:600;margin-left:8px}
+    .empty-placeholder{padding:18px 14px;margin:0;border:1px dashed rgba(0,0,0,0.12);border-radius:8px;color:var(--muted);font-size:13px;text-align:center}
+    .column-body.drop-target{background:rgba(37,99,235,0.06);border-radius:8px}
+    .card.dragging{opacity:0.5}
+    .card.card-error{border-color:#dc2626;background:#fef2f2;animation:shake .3s ease-in-out}
+    .card-error-msg{margin:8px 0 0;padding:6px 8px;background:#fee2e2;color:#991b1b;border-radius:5px;font-size:12px;line-height:1.3}
+    @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+    .card{background:var(--card);border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:12px;margin-bottom:12px;box-shadow:0 1px 0 rgba(0,0,0,0.02)}
+    .card-title{margin:0 0 6px;font-size:15px}
+    .card-desc{margin:0 0 8px;color:var(--muted);font-size:13px}
+    .card-meta{display:flex;gap:12px;font-size:12px;color:var(--muted);margin-bottom:8px}
+    .card-meta .priority{font-weight:600;color:#0f172a}
+    .card-actions{display:flex;justify-content:flex-end}
+    .edit-btn{background:transparent;border:1px solid rgba(0,0,0,0.08);padding:6px 8px;border-radius:6px;font-size:13px;cursor:pointer}
+    .edit-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+    .due-date{display:block}
+    .overdue-pill{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600}
+    .tag-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+    .tag-chip{background:#eef2ff;color:#3730a3;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px}
+
+    .filter-bar{display:flex;flex-wrap:wrap;align-items:center;gap:16px;margin-bottom:16px;padding:12px 16px;background:#fff;border:1px solid rgba(0,0,0,0.08);border-radius:10px;font-size:13px}
+    .filter-bar label{display:flex;align-items:center;gap:6px;color:#334155}
+    .filter-bar input[type="text"]{padding:5px 8px;border:1px solid rgba(0,0,0,0.15);border-radius:6px;font-size:13px}
+    .filter-clear{background:transparent;border:1px solid rgba(0,0,0,0.1);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:12px}
+    .filter-clear:hover{border-color:var(--accent);color:var(--accent)}
+    .btn-new-task{margin-left:auto;background:var(--accent);border:1px solid var(--accent);color:#fff;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600}
+    .btn-new-task:hover{opacity:0.9}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.45);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+    .modal-overlay.hidden{display:none}
+    .modal{background:#fff;border-radius:12px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,0.2)}
+    .modal h2{margin:0 0 16px;font-size:17px}
+    .modal label{display:block;font-size:12px;font-weight:600;color:#334155;margin-bottom:12px}
+    .modal input,.modal select,.modal textarea{display:block;width:100%;margin-top:4px;padding:8px;border:1px solid rgba(0,0,0,0.15);border-radius:6px;font-size:13px;font-family:inherit}
+    .modal textarea{min-height:60px;resize:vertical}
+    .modal-error{background:#fee2e2;color:#991b1b;padding:8px 10px;border-radius:6px;font-size:12px;margin-bottom:12px}
+    .modal-error.hidden{display:none}
+    .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+    .modal-actions button{padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer}
+    .modal-actions .btn-cancel{background:transparent;border:1px solid rgba(0,0,0,0.15)}
+    .modal-actions .btn-save{background:var(--accent);border:1px solid var(--accent);color:#fff}
+
+    @media (max-width:880px){.board{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <h1>Task Tracker</h1>
+    <p class="subtitle">Simple static Kanban layout (first draft)</p>
+  </header>
+
+  <main>
+    <div class="filter-bar">
+      <label><input type="checkbox" id="filter-overdue"> Overdue only</label>
+      <label>Tag:
+        <input type="text" id="filter-tag" list="tag-options" placeholder="e.g. backend">
+      </label>
+      <datalist id="tag-options"></datalist>
+      <button type="button" class="filter-clear" id="filter-clear">Clear filters</button>
+      <button type="button" class="btn-new-task" id="new-task-btn">+ New Task</button>
+    </div>
+    <div class="board-state hidden" id="board-state" role="status" aria-live="polite"></div>
+    <div class="board" id="task-board" role="list">
+      <!-- To Do column (data-status must be exactly "ToDo") -->
+      <section class="column" data-status="ToDo" aria-label="To Do column">
+        <div class="column-header">
+          <h2>To Do <span class="count">0</span></h2>
+        </div>
+        <div class="column-body">
+          <article class="card" data-id="task-1" role="listitem">
+            <h3 class="card-title">Initialize repository</h3>
+            <p class="card-desc">Create repo, add README, and initial project layout.</p>
+            <div class="card-meta">
+              <span class="priority">Priority: High</span>
+              <span class="assignee">Assignee: Alice</span>
+            </div>
+            <div class="card-actions"><button class="edit-btn" aria-label="Edit task Initialize repository">Edit</button></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- In Progress column (data-status must be exactly "InProgress") -->
+      <section class="column" data-status="InProgress" aria-label="In Progress column">
+        <div class="column-header">
+          <h2>In Progress <span class="count">0</span></h2>
+        </div>
+        <div class="column-body">
+          <article class="card" data-id="task-2" role="listitem">
+            <h3 class="card-title">Implement API routes</h3>
+            <p class="card-desc">Work on basic health and tasks routes.</p>
+            <div class="card-meta">
+              <span class="priority">Priority: Medium</span>
+              <span class="assignee">Assignee: Bob</span>
+            </div>
+            <div class="card-actions"><button class="edit-btn" aria-label="Edit task Implement API routes">Edit</button></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Done column (data-status must be exactly "Done") -->
+      <section class="column" data-status="Done" aria-label="Done column">
+        <div class="column-header">
+          <h2>Done <span class="count">0</span></h2>
+        </div>
+        <div class="column-body">
+          <article class="card" data-id="task-3" role="listitem">
+            <h3 class="card-title">Write tests</h3>
+            <p class="card-desc">Add initial unit tests and CI config.</p>
+            <div class="card-meta">
+              <span class="priority">Priority: Low</span>
+              <span class="assignee">Unassigned</span>
+            </div>
+            <div class="card-actions"><button class="edit-btn" aria-label="Edit task Write tests">Edit</button></div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal-overlay hidden" id="edit-modal-overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+      <h2 id="edit-modal-title">Edit Task</h2>
+      <form id="edit-form">
+        <div class="modal-error hidden" id="modal-error"></div>
+        <label>Title
+          <input type="text" id="edit-title" maxlength="200" required>
+        </label>
+        <label>Description
+          <textarea id="edit-description"></textarea>
+        </label>
+        <label>Status
+          <select id="edit-status">
+            <option value="ToDo">To Do</option>
+            <option value="InProgress">In Progress</option>
+            <option value="Done">Done</option>
+          </select>
+        </label>
+        <label>Priority
+          <select id="edit-priority">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </label>
+        <label>Assignee
+          <input type="text" id="edit-assignee">
+        </label>
+        <label>Due date
+          <input type="date" id="edit-due-date">
+        </label>
+        <label>Tags (comma separated)
+          <input type="text" id="edit-tags" placeholder="backend, urgent">
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" id="modal-cancel">Cancel</button>
+          <button type="submit" class="btn-save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Fetch and render logic for tasks board
+    const BASE_URL = 'http://localhost:8000';
+    let tasks = [];
+    let dragTaskId = null;
+    const taskErrors = new Map();  // taskId → error message string
+    const STATUSES = ['ToDo','InProgress','Done'];
+    const priorityOrder = { 'High': 0, 'Medium': 1, 'Low': 2 };
+
+    function setBoardState(state, message = ''){
+      const boardState = document.getElementById('board-state');
+      boardState.className = state === 'ready' ? 'board-state hidden' : 'board-state';
+      boardState.innerHTML = '';
+
+      if (state === 'ready') return;
+
+      const msg = document.createElement('div');
+      msg.className = 'state-message';
+      msg.textContent = state === 'loading'
+        ? 'Loading tasks…'
+        : state === 'empty'
+          ? 'No tasks yet. The board is ready for future work.'
+          : message || 'Unable to load tasks. Please try again.';
+      boardState.appendChild(msg);
+
+      if (state === 'error') {
+        const action = document.createElement('div');
+        action.className = 'state-action';
+        const retryBtn = document.createElement('button');
+        retryBtn.type = 'button';
+        retryBtn.textContent = 'Retry';
+        retryBtn.addEventListener('click', fetchTasks);
+        action.appendChild(retryBtn);
+        boardState.appendChild(action);
+      }
+    }
+
+    function createCardElement(task){
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.dataset.id = `task-${task.id}`;
+      card.dataset.taskId = String(task.id);
+      card.draggable = true;
+
+      const taskId = String(task.id);
+      if (taskErrors.has(taskId)) {
+        card.classList.add('card-error');
+      }
+
+      card.addEventListener('dragstart', function (event) {
+        dragTaskId = String(task.id);
+        taskErrors.delete(String(task.id));
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', dragTaskId);
+        card.classList.add('dragging');
+      });
+
+      card.addEventListener('dragend', function () {
+        dragTaskId = null;
+        card.classList.remove('dragging');
+        document.querySelectorAll('.column-body.drop-target').forEach(el => el.classList.remove('drop-target'));
+      });
+
+      const title = document.createElement('h3');
+      title.className = 'card-title';
+      title.textContent = task.title ?? '';
+
+      card.appendChild(title);
+
+      if (task.description) {
+        const desc = document.createElement('p');
+        desc.className = 'card-desc';
+        desc.textContent = task.description;
+        card.appendChild(desc);
+      }
+
+      if (Array.isArray(task.tags) && task.tags.length > 0) {
+        const chips = document.createElement('div');
+        chips.className = 'tag-chips';
+        task.tags.forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.textContent = tag;
+          chips.appendChild(chip);
+        });
+        card.appendChild(chips);
+      }
+
+      const meta = document.createElement('div');
+      meta.className = 'card-meta';
+
+      const pr = document.createElement('span');
+      pr.className = 'priority';
+      pr.textContent = `Priority: ${task.priority ?? 'Low'}`;
+
+      const assignee = document.createElement('span');
+      assignee.className = 'assignee';
+      assignee.textContent = `Assignee: ${task.assignee || 'Unassigned'}`;
+
+      meta.appendChild(pr);
+      meta.appendChild(assignee);
+      card.appendChild(meta);
+
+      if (task.due_date) {
+        const due = document.createElement('div');
+        due.className = 'due-date';
+        due.textContent = `Due: ${task.due_date}`;
+        if (task.is_overdue) {
+          const pill = document.createElement('span');
+          pill.className = 'overdue-pill';
+          pill.textContent = 'Overdue';
+          due.appendChild(pill);
+        }
+        card.appendChild(due);
+      }
+
+      const actions = document.createElement('div');
+      actions.className = 'card-actions';
+      const btn = document.createElement('button');
+      btn.className = 'edit-btn';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', `Edit task ${task.title || ''}`);
+      btn.textContent = 'Edit';
+      actions.appendChild(btn);
+
+      card.appendChild(actions);
+
+      if (taskErrors.has(taskId)) {
+        const errEl = document.createElement('div');
+        errEl.className = 'card-error-msg';
+        errEl.textContent = taskErrors.get(taskId);
+        card.appendChild(errEl);
+      }
+      return card;
+    }
+
+    function renderBoard(list){
+      STATUSES.forEach(status => {
+        const column = document.querySelector(`.column[data-status="${status}"]`);
+        if (!column) return;
+        const body = column.querySelector('.column-body');
+        const countEl = column.querySelector('.column-header .count');
+        body.innerHTML = '';
+
+        const group = list.filter(t => t.status === status);
+        group.sort((a,b) => {
+          const pa = priorityOrder[a.priority] ?? 3;
+          const pb = priorityOrder[b.priority] ?? 3;
+          if (pa !== pb) return pa - pb;
+          const ida = Number(a.id);
+          const idb = Number(b.id);
+          if (!isNaN(ida) && !isNaN(idb)) return ida - idb;
+          return String(a.id).localeCompare(String(b.id));
+        });
+
+        if (countEl) countEl.textContent = group.length;
+
+        if (group.length === 0) {
+          const placeholder = document.createElement('div');
+          placeholder.className = 'empty-placeholder';
+          placeholder.textContent = 'No tasks in this column yet.';
+          body.appendChild(placeholder);
+        } else {
+          group.forEach(task => body.appendChild(createCardElement(task)));
+        }
+
+        body.addEventListener('dragover', function (event) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = 'move';
+        });
+
+        body.addEventListener('dragenter', function (event) {
+          event.preventDefault();
+          body.classList.add('drop-target');
+        });
+
+        body.addEventListener('dragleave', function () {
+          body.classList.remove('drop-target');
+        });
+
+        body.addEventListener('drop', async function (event) {
+          event.preventDefault();
+          body.classList.remove('drop-target');
+
+          const taskId = event.dataTransfer.getData('text/plain');
+          if (!taskId) return;
+
+          const task = tasks.find(t => String(t.id) === taskId);
+          if (!task) return;
+
+          const targetStatus = status;
+          if (task.status === targetStatus) return;
+
+          const previousStatus = task.status;
+          task.status = targetStatus;
+          renderBoard(tasks);
+
+          try {
+            const res = await fetch(`${BASE_URL}/tasks/${encodeURIComponent(taskId)}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: targetStatus }),
+            });
+
+            if (!res.ok) {
+              const bodyJson = await res.json().catch(() => null);
+              let errorMessage = `Server returned ${res.status}`;
+              if (bodyJson?.detail) {
+                if (Array.isArray(bodyJson.detail)) {
+                  errorMessage = bodyJson.detail.map(d => d.msg).join('; ');
+                } else {
+                  errorMessage = bodyJson.detail;
+                }
+              }
+              task.status = previousStatus;
+              taskErrors.set(taskId, errorMessage);
+              renderBoard(tasks);
+              setTimeout(() => { taskErrors.delete(taskId); renderBoard(tasks); }, 4000);
+            }
+          } catch (err) {
+            task.status = previousStatus;
+            taskErrors.set(taskId, 'Network error while moving task. Please try again.');
+            renderBoard(tasks);
+            setTimeout(() => { taskErrors.delete(taskId); renderBoard(tasks); }, 4000);
+          }
+        });
+      });
+    }
+
+    const filters = { overdue: false, tag: '' };
+
+    function updateTagOptions(list){
+      const datalist = document.getElementById('tag-options');
+      const distinct = [...new Set(list.flatMap(t => Array.isArray(t.tags) ? t.tags : []))].sort();
+      datalist.innerHTML = '';
+      distinct.forEach(tag => {
+        const opt = document.createElement('option');
+        opt.value = tag;
+        datalist.appendChild(opt);
+      });
+    }
+
+    async function fetchTasks(){
+      setBoardState('loading');
+      renderBoard([]);
+
+      const params = new URLSearchParams();
+      if (filters.overdue) params.set('overdue', 'true');
+      if (filters.tag) params.set('tag', filters.tag);
+      const query = params.toString();
+
+      try {
+        const res = await fetch(`${BASE_URL}/tasks${query ? '?' + query : ''}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error('Expected tasks array');
+        tasks = data;
+        renderBoard(tasks);
+        updateTagOptions(tasks);
+        setBoardState(tasks.length === 0 ? 'empty' : 'ready');
+      } catch (err) {
+        console.error('Failed to fetch tasks:', err);
+        renderBoard([]);
+        setBoardState('error', err.message);
+      }
+    }
+
+    // ---------------------------------------------------------------------
+    // Edit modal
+    // ---------------------------------------------------------------------
+
+    let editingTaskId = null;
+    let modalMode = 'edit'; // 'edit' | 'create'
+    const modalOverlay = document.getElementById('edit-modal-overlay');
+    const modalTitle = document.getElementById('edit-modal-title');
+    const editForm = document.getElementById('edit-form');
+    const modalError = document.getElementById('modal-error');
+    const modalSaveBtn = editForm.querySelector('.btn-save');
+
+    function showModalError(message){
+      modalError.textContent = message;
+      modalError.classList.remove('hidden');
+    }
+
+    function openEditModal(task){
+      modalMode = 'edit';
+      editingTaskId = String(task.id);
+      modalTitle.textContent = 'Edit Task';
+      modalSaveBtn.textContent = 'Save';
+      modalError.classList.add('hidden');
+      document.getElementById('edit-title').value = task.title || '';
+      document.getElementById('edit-description').value = task.description || '';
+      document.getElementById('edit-status').value = task.status;
+      document.getElementById('edit-priority').value = task.priority;
+      document.getElementById('edit-assignee').value = task.assignee || '';
+      document.getElementById('edit-due-date').value = task.due_date || '';
+      document.getElementById('edit-tags').value = (task.tags || []).join(', ');
+      modalOverlay.classList.remove('hidden');
+      document.getElementById('edit-title').focus();
+    }
+
+    function openCreateModal(){
+      modalMode = 'create';
+      editingTaskId = null;
+      modalTitle.textContent = 'New Task';
+      modalSaveBtn.textContent = 'Create';
+      modalError.classList.add('hidden');
+      document.getElementById('edit-title').value = '';
+      document.getElementById('edit-description').value = '';
+      document.getElementById('edit-status').value = 'ToDo';
+      document.getElementById('edit-priority').value = 'Medium';
+      document.getElementById('edit-assignee').value = '';
+      document.getElementById('edit-due-date').value = '';
+      document.getElementById('edit-tags').value = '';
+      modalOverlay.classList.remove('hidden');
+      document.getElementById('edit-title').focus();
+    }
+
+    function closeEditModal(){
+      editingTaskId = null;
+      modalOverlay.classList.add('hidden');
+    }
+
+    document.getElementById('new-task-btn').addEventListener('click', openCreateModal);
+
+    modalOverlay.addEventListener('click', function (e) {
+      if (e.target === modalOverlay) closeEditModal();
+    });
+
+    document.getElementById('modal-cancel').addEventListener('click', closeEditModal);
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeEditModal();
+    });
+
+    document.addEventListener('click', function (e) {
+      if (e.target.classList.contains('edit-btn')) {
+        const card = e.target.closest('.card');
+        const taskId = card && card.dataset.taskId;
+        const task = tasks.find(t => String(t.id) === taskId);
+        if (task) openEditModal(task);
+      }
+    });
+
+    editForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      if (modalMode === 'edit' && !editingTaskId) return;
+
+      const tags = document.getElementById('edit-tags').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+      const dueDateValue = document.getElementById('edit-due-date').value;
+
+      const payload = {
+        title: document.getElementById('edit-title').value,
+        description: document.getElementById('edit-description').value,
+        status: document.getElementById('edit-status').value,
+        priority: document.getElementById('edit-priority').value,
+        assignee: document.getElementById('edit-assignee').value || null,
+        due_date: dueDateValue || null,
+        tags,
+      };
+
+      const isCreate = modalMode === 'create';
+      const url = isCreate
+        ? `${BASE_URL}/tasks`
+        : `${BASE_URL}/tasks/${encodeURIComponent(editingTaskId)}`;
+
+      try {
+        const res = await fetch(url, {
+          method: isCreate ? 'POST' : 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const bodyJson = await res.json().catch(() => null);
+          let errorMessage = `Server returned ${res.status}`;
+          if (bodyJson?.detail) {
+            errorMessage = Array.isArray(bodyJson.detail)
+              ? bodyJson.detail.map(d => d.msg).join('; ')
+              : bodyJson.detail;
+          }
+          showModalError(errorMessage);
+          return;
+        }
+
+        closeEditModal();
+        await fetchTasks();
+      } catch (err) {
+        showModalError('Network error while saving. Please try again.');
+      }
+    });
+
+    // ---------------------------------------------------------------------
+    // Filter bar
+    // ---------------------------------------------------------------------
+
+    document.getElementById('filter-overdue').addEventListener('change', function (e) {
+      filters.overdue = e.target.checked;
+      fetchTasks();
+    });
+
+    let tagFilterDebounce = null;
+    document.getElementById('filter-tag').addEventListener('input', function (e) {
+      clearTimeout(tagFilterDebounce);
+      tagFilterDebounce = setTimeout(() => {
+        filters.tag = e.target.value.trim();
+        fetchTasks();
+      }, 300);
+    });
+
+    document.getElementById('filter-clear').addEventListener('click', function () {
+      filters.overdue = false;
+      filters.tag = '';
+      document.getElementById('filter-overdue').checked = false;
+      document.getElementById('filter-tag').value = '';
+      fetchTasks();
+    });
+
+    // load tasks on page ready
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchTasks();
+    });
+  </script>
+</body>
+</html>
