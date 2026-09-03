@@ -251,7 +251,7 @@ docker run --rm -p 8000:8000 task-tracker
 curl -i http://127.0.0.1:8000/health
 ```
 
-The Dockerfile runs the application as a non-root user. Record the real Docker build/run and `/health` result in `docs/release-evidence.md` before final submission.
+The Dockerfile is configured to run the application as a non-root user. Docker runtime verification could not be completed on this machine because Docker Desktop could not start without virtualization support. This limitation is documented in docs/release-evidence.md.
 
 ### Evidence files
 
